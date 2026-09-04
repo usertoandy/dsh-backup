@@ -1,0 +1,43 @@
+# 依赖
+node_modules/
+package-lock.json          # 如果你希望锁定依赖版本，可以保留此文件并提交
+yarn.lock                  # 如果使用 yarn，可保留
+pnpm-lock.yaml             # 如果使用 pnpm，可保留
+
+# 编译输出（根据你的 tsconfig 或构建工具调整）
+dist/
+build/
+out/
+lib/
+*.tsbuildinfo              # TypeScript 增量编译缓存
+
+# 测试覆盖率
+coverage/
+.nyc_output/
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+.zcode
+
+# 日志
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 操作系统生成文件
+.DS_Store
+Thumbs.db
+
+# 编辑器/IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 临时文件
+tmp/
+temp/

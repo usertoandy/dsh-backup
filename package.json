@@ -1,0 +1,45 @@
+{
+  "name": "dsh-backup",
+  "version": "0.1.0",
+  "description": "DeepSeek Harness plugin: /backup, /backup-list and /backup-restore commands to back up, list and restore the DSH home directory.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "cordis.patch.yml"
+  ],
+  "scripts": {
+    "test": "tsx tests/core.test.mjs",
+    "backup": "tsx backup.ts"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "cordis",
+    "backup",
+    "restore"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-commands": ">=0.1.2-alpha.4",
+    "@deepseek-ai/dsh-user-questions": ">=0.1.2-alpha.4"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-commands": "link:../deepseek-harness/packages/interaction/commands",
+    "@deepseek-ai/dsh-user-questions": "link:../deepseek-harness/packages/interaction/user-questions",
+    "tsx": "^4.19.0"
+  }
+}

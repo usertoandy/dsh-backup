@@ -1,0 +1,4 @@
+# dsh-backup bundle patch: one host row over the profile.
+- insert:
+    - id: dsh-backup
+      name: dsh-backup
