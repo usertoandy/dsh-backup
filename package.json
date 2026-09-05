@@ -14,8 +14,7 @@
     "cordis.patch.yml"
   ],
   "scripts": {
-    "test": "tsx tests/core.test.mjs",
-    "backup": "tsx backup.ts"
+    "test": "tsx tests/core.test.mjs"
   },
   "dsh": {
     "bundle": {
@@ -49,8 +48,9 @@
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-commands": "link:../deepseek-harness/packages/interaction/commands",
-    "@deepseek-ai/dsh-user-questions": "link:../deepseek-harness/packages/interaction/user-questions",
+    "@deepseek-ai/dsh-commands": "^0.1.2-rc.1",
+    "@deepseek-ai/dsh-user-questions": "^0.1.2-rc.1",
+    "@types/node": "^24",
     "tsx": "^4.19.0"
   }
 }

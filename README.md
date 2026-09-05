@@ -2,6 +2,8 @@
 
 DeepSeek Harness plugin backup. Archives are written to `~/.dsh-backup`.
 
+Repository: https://github.com/usertoandy/dsh-backup.git
+
 ## Commands
 
 | Command | Function |
@@ -23,11 +25,13 @@ After a restore you may need to restart any running `dsh` processes.
 
 ## Install
 
-The host loads `src/index.ts` directly (no build step). Register the plugin
-with a profile (the bundles list is updated automatically by `dsh plugin add`):
+The host loads `src/index.ts` directly (no build step). Install straight
+from the npm registry — `dsh plugin add` forwards the package name to pnpm
+inside the profile directory, then activates the bundle automatically
+(the bundles list is updated by the reconcile step):
 
 ```sh
-dsh plugin --profile web add /Users/andy/harness/dsh-backup
+dsh plugin --profile web add @wildusk/dsh-backup
 ```
 
 Restart `dsh web` afterwards; `/backup`, `/backup-list` and `/backup-restore`
@@ -41,5 +45,4 @@ services plus `tar` on the PATH.
 - `src/index.ts` — plugin entry: `name` / `inject` / `apply`.
 - `src/commands.ts` — the three command handlers and their output text.
 - `src/backup-core.ts` — timestamped tar.gz creation, listing and guarded
-  restore, ported from `backup.ts` (asynchronous, abort-aware).
-- `backup.ts` — the original standalone CLI tool kept for reference.
+  restore (asynchronous, abort-aware).

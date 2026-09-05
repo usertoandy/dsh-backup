@@ -1,6 +1,5 @@
 /**
- * Core backup/list/restore logic ported from the standalone `backup.ts` tool:
- * timestamped `tar -czf` archives of the DSH home under the backup directory,
+ * Core backup/list/restore logic: timestamped `tar -czf` archives of the DSH home under the backup directory,
  * a newest-first listing, and guarded extraction back into the DSH home.
  *
  * Unlike the original CLI tool this runs inside the harness host process, so
