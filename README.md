@@ -1,13 +1,6 @@
 # @wildusk/dsh-backup
 
-DeepSeek Harness plugin that adds three slash commands to the harness dialog for
-backing up, listing and restoring the DSH home directory (`$DSH_HOME`, default
-`~/.dsh`). The logic is ported from the standalone `backup.ts` tool; the output
-follows the harness's built-in command conventions, and the restore
-selection/confirmation prompts use the harness's user-questions UI.
-
-Archives are written to `~/.dsh-backup`. Paths are not configurable: the source
-is `$DSH_HOME` or `~/.dsh`, and the backup directory is always `~/.dsh-backup`.
+DeepSeek Harness plugin backup. Archives are written to `~/.dsh-backup`.
 
 ## Commands
 
