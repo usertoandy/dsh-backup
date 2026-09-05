@@ -7,7 +7,7 @@
  * every operation is asynchronous, `tar` output is captured instead of
  * inherited, and long-running work honours an abort signal.
  *
- * @module dsh-backup/backup-core
+ * @module @wildusk/dsh-backup/backup-core
  */
 
 import { spawn } from 'child_process'

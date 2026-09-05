@@ -1,4 +1,4 @@
-# dsh-backup
+# @wildusk/dsh-backup
 
 DeepSeek Harness plugin that adds three slash commands to the harness dialog for
 backing up, listing and restoring the DSH home directory (`$DSH_HOME`, default

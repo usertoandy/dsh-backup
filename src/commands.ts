@@ -7,7 +7,7 @@
  * `dsh-backup:` prefix, and the restore selection/confirmation prompts use the
  * user-questions UI — the chat equivalent of the original tool's readline flow.
  *
- * @module dsh-backup/commands
+ * @module @wildusk/dsh-backup/commands
  */
 
 import type { Context } from '@deepseek-ai/cordis'

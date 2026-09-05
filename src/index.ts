@@ -4,7 +4,7 @@
  * `backup.ts` tool; output follows the harness's built-in command conventions
  * and the restore prompts use the user-questions UI.
  *
- * @module dsh-backup
+ * @module @wildusk/dsh-backup
  */
 
 import * as os from 'os'
@@ -15,7 +15,7 @@ import type { UserQuestionService } from '@deepseek-ai/dsh-user-questions'
 import type { BackupPaths } from './backup-core.ts'
 import { registerBackupCommands } from './commands.ts'
 
-export const name = 'dsh-backup'
+export const name = '@wildusk/dsh-backup'
 
 export const inject = ['commands', 'userQuestions']
 

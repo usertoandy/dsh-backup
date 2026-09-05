@@ -1,5 +1,5 @@
 {
-  "name": "dsh-backup",
+  "name": "@wildusk/dsh-backup",
   "version": "0.1.0",
   "description": "DeepSeek Harness plugin: /backup, /backup-list and /backup-restore commands to back up, list and restore the DSH home directory.",
   "type": "module",

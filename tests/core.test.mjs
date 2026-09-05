@@ -90,7 +90,7 @@ try {
     'tar failure surfaces stderr')
 
   // --- plugin entry registers the three commands -----------------------------
-  assert.equal(plugin.name, 'dsh-backup')
+  assert.equal(plugin.name, '@wildusk/dsh-backup')
   assert.deepEqual(plugin.inject, ['commands', 'userQuestions'])
   const registered = []
   plugin.apply({
