@@ -41,6 +41,10 @@
     "restore"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usertoandy/dsh-backup.git"
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
     "@deepseek-ai/dsh-commands": ">=0.1.2-alpha.4",
