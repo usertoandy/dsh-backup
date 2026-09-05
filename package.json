@@ -1,6 +1,6 @@
 {
   "name": "@wildusk/dsh-backup",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "DeepSeek Harness plugin: /backup, /backup-list and /backup-restore commands to back up, list and restore the DSH home directory. DeepSeek Harness 备份插件：一键备份 DSH 主目录（~/.dsh）为时间戳 tar.gz 归档、查看历史备份并恢复。",
   "type": "module",
   "main": "./src/index.ts",
