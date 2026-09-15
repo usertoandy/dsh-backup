@@ -6,6 +6,7 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./client": "./src/client.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
@@ -14,11 +15,14 @@
     "cordis.patch.yml"
   ],
   "scripts": {
-    "test": "tsx tests/core.test.mjs"
+    "test": "tsx tests/core.test.mjs && node tests/client.test.mjs"
   },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
     }
   },
   "dshhub": {
@@ -29,7 +33,8 @@
       "备份"
     ],
     "surfaces": [
-      "host"
+      "host",
+      "web"
     ]
   },
   "keywords": [
