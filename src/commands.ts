@@ -6,6 +6,9 @@
  * `Usage:` trailer, operational events go to the cordis logger with a
  * `dsh-backup:` prefix, and the restore selection/confirmation prompts use the
  * user-questions UI — the chat equivalent of the original tool's readline flow.
+ * Backing out of the restore dialog is a normal outcome reported as text, not a
+ * thrown error: a thrown handler is re-raised to the caller, which fails the
+ * command request and leaves the user with no message at all.
  *
  * @module @wildusk/dsh-backup/commands
  */
@@ -134,22 +137,29 @@ async function runBackupRestoreCommand(
       text: `No backups found to restore in ${paths.backupDir}.\nCreate one with /backup.`,
     }
   }
-  const choice = await askRestoreChoice(ctx, paths, backups, invocation)
-  if (choice === undefined) return { kind: 'success', text: 'Restore cancelled.' }
+  const decision = await askRestoreChoice(ctx, paths, backups, invocation)
+  if (decision.kind === 'rejected') {
+    // A declined or dismissed dialog is a normal outcome, not a failure. It has
+    // to settle as an ordinary result: a thrown handler is re-raised to the
+    // caller after the error row is logged, so the command request itself fails
+    // and the user sees no transcript message at all.
+    ctx.logger.info(`dsh-backup: restore rejected by the user (${decision.reason})`)
+    return { kind: 'success', text: rejectText(decision.reason) }
+  }
+  const { entry, mode } = decision
   try {
-    await restoreBackupArchive(choice.entry.path, paths, choice.mode, invocation.signal)
+    await restoreBackupArchive(entry.path, paths, mode, invocation.signal)
   } catch (error: unknown) {
     return settleFailure(ctx, 'Restore', error)
   }
-  ctx.logger.info(
-    `dsh-backup: restored ${choice.entry.path} (${choice.mode}) into ${paths.dshHome}`)
+  ctx.logger.info(`dsh-backup: restored ${entry.path} (${mode}) into ${paths.dshHome}`)
   return {
     kind: 'success',
     text: [
       'Restore completed successfully.',
-      `Archive: ${choice.entry.path}`,
+      `Archive: ${entry.path}`,
       `Target: ${paths.dshHome}`,
-      `Mode: ${choice.mode === 'clean'
+      `Mode: ${mode === 'clean'
         ? 'clean — DSH_HOME was emptied first, the backup is restored exactly'
         : 'yes — extracted over the current files; files not in the backup are kept'}`,
       '',
@@ -158,14 +168,20 @@ async function runBackupRestoreCommand(
   }
 }
 
-/** The resolved restore choice, or `undefined` when the user cancelled. */
-type RestoreChoice = { readonly entry: BackupEntry; readonly mode: RestoreMode }
+/** Why a restore ended without restoring anything. */
+type RejectionReason = 'declined' | 'dismissed'
+
+/** The restore dialog's outcome: proceed, or an explicit user rejection. */
+type RestoreDecision =
+  | { readonly kind: 'restore'; readonly entry: BackupEntry; readonly mode: RestoreMode }
+  | { readonly kind: 'rejected'; readonly reason: RejectionReason }
 
 /**
  * Ask which backup to restore and how, mirroring the original tool's
  * selection prompt and yes/clean/no confirmation in one dialog.
  *
- * @returns The resolved choice, or `undefined` for a cancel/decline answer.
+ * @returns The resolved decision. A decline or a dismissed dialog is reported
+ *   as an explicit rejection, never as a thrown error.
  * @throws {BackupError} when the dialog fails or the selection is unusable.
  */
 async function askRestoreChoice(
@@ -173,7 +189,7 @@ async function askRestoreChoice(
   paths: BackupPaths,
   backups: readonly BackupEntry[],
   invocation: CommandInvocation,
-): Promise<RestoreChoice | undefined> {
+): Promise<RestoreDecision> {
   const questions: AskUserQuestionItem[] = [
     {
       id: 'backup',
@@ -210,18 +226,21 @@ async function askRestoreChoice(
       signal: invocation.signal,
     })
   } catch (error: unknown) {
-    if (isCancelledAsk(error)) return undefined
+    // Closing the dialog rejects the ask with `ASK_CANCELLED`; aborting the
+    // owning signal rejects it with `ASK_ABORTED`. Both mean the user backed
+    // out, and both must surface as a readable outcome.
+    if (isUserRejection(error)) return { kind: 'rejected', reason: 'dismissed' }
     // No answerer accepted the dialog (e.g. a headless context): say why.
     ctx.logger.error(`dsh-backup: restore dialog failed: ${errorMessage(error)}`)
     throw new BackupError(`Restore dialog failed: ${errorMessage(error)}`)
   }
   const mode = normalizeMode(answer.answers.find(item => item.id === 'confirm')?.selected[0])
-  if (mode === undefined) return undefined
+  if (mode === undefined) return { kind: 'rejected', reason: 'declined' }
   const entry = resolveBackupSelection(backups, answer.answers.find(item => item.id === 'backup'))
   if (entry === undefined) {
     throw new BackupError(`Invalid backup selection. ${USAGE_RESTORE}`)
   }
-  return { entry, mode }
+  return { kind: 'restore', entry, mode }
 }
 
 /** Resolve the first question's answer back to a listed archive. */
@@ -251,9 +270,23 @@ function normalizeMode(label: string | undefined): RestoreMode | undefined {
   return mode === 'yes' || mode === 'clean' ? mode : undefined
 }
 
-/** Whether the user-questions dialog was cancelled by the user or the signal. */
-function isCancelledAsk(error: unknown): boolean {
-  return (error as { code?: unknown } | null | undefined)?.code === 'ASK_ABORTED'
+/**
+ * Whether the user-questions dialog ended because the user backed out.
+ *
+ * Two distinct codes reach here: `ASK_CANCELLED` when the user closes the
+ * dialog, and `ASK_ABORTED` when the owning signal is aborted. Neither is a
+ * failure, and both must produce a message rather than a thrown error.
+ */
+function isUserRejection(error: unknown): boolean {
+  const code = (error as { code?: unknown } | null | undefined)?.code
+  return code === 'ASK_CANCELLED' || code === 'ASK_ABORTED'
+}
+
+/** Rejection copy: name what the user did, and that nothing was changed. */
+function rejectText(reason: RejectionReason): string {
+  return reason === 'declined'
+    ? 'Restore rejected — you chose "no". Nothing was changed.'
+    : 'Restore rejected — you dismissed the dialog. Nothing was changed.'
 }
 
 /** Render one settled failure; cancelled work is a normal outcome, not an error. */

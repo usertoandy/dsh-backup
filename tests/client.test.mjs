@@ -97,23 +97,87 @@ assert.equal(node.data.text, '/backup-list')
 const argued = definition.start({}, conversationMatch('backup-restore', '  extra  '))
 assert.equal(argued.text, '/backup-restore  extra', 'arguments preserved, trailing whitespace trimmed')
 
-// --- the renderer is registered under the Node kind --------------------------
-assert.equal(slotRegistrations.length, 1, 'one keyed Chat Node renderer registered')
-assert.equal(slotRegistrations[0].options.name, 'conversation.chat.node')
-assert.equal(slotRegistrations[0].options.key, 'backup-command-input',
+// --- renderers are registered under the right seats --------------------------
+const nodeRegistrations = slotRegistrations.filter(entry => entry.options.name === 'conversation.chat.node')
+const commandRegistrations = slotRegistrations.filter(entry => entry.options.name === 'conversation.chat.commandview')
+assert.equal(slotRegistrations.length, 4, 'one Node renderer plus three command-view renderers')
+assert.equal(nodeRegistrations.length, 1, 'one keyed Chat Node renderer registered')
+assert.equal(nodeRegistrations[0].options.key, 'backup-command-input',
   'renderer key must equal the Node kind, or the card falls back to a raw JSON dump')
+// The commandview slot is keyed by COMMAND NAME: a key that does not match the
+// command leaves the shipped (collapsed) generic card in place.
+assert.deepEqual(
+  commandRegistrations.map(entry => entry.options.key),
+  ['backup', 'backup-list', 'backup-restore'],
+  'every owned command gets a command-view renderer keyed by its own name',
+)
 
 // --- the rendered tree carries the command text ------------------------------
-const tree = slotRegistrations[0].component({ node, t: () => '' })
-const text = []
-const walk = element => {
+const walk = (element, into) => {
   if (element === null || element === undefined || typeof element === 'boolean') return
-  if (typeof element === 'string' || typeof element === 'number') { text.push(String(element)); return }
-  if (Array.isArray(element)) { for (const child of element) walk(child); return }
-  for (const child of element.children ?? []) walk(child)
+  if (typeof element === 'string' || typeof element === 'number') { into.push(String(element)); return }
+  if (Array.isArray(element)) { for (const child of element) walk(child, into); return }
+  for (const child of element.children ?? []) walk(child, into)
 }
-walk(tree)
+const text = []
+const tree = nodeRegistrations[0].component({ node })
+walk(tree, text)
 assert.deepEqual(text, ['/backup-list'], 'the bubble renders exactly the typed command line')
 assert.equal(tree.props['data-backup-command-input'], '', 'renderer marks its own node for tests/styling')
+
+// --- the result card shows its body WITHOUT an expand interaction ------------
+// Load-bearing: the shipped GenericCommandCard renders the outcome into a
+// single nowrap/ellipsised `.summary` and only reveals the full text behind a
+// disclosure chevron. The override must render the whole text on first paint.
+const cardFor = name => commandRegistrations.find(entry => entry.options.key === name).component
+const folded = (name, outcome) => ({
+  kind: 'command',
+  seq: 8,
+  time: 1700000000000,
+  commandId: `cmd-${name}`,
+  name,
+  args: null,
+  outcome,
+})
+const TABLE = [
+  'Existing backups in /tmp/backups: 2',
+  '',
+  '  #  Filename                                    Size       Date',
+  '  ── ─────────────────────────────────────────── ────────── ────────────────────',
+  '   1 dsh-backup-2026-01-01_00-00-00.tar.gz        1.2 MB  2026-01-01 00:00:00',
+  '   2 dsh-backup-2026-01-02_00-00-00.tar.gz        1.3 MB  2026-01-02 00:00:00',
+].join('\n')
+
+const okTree = cardFor('backup-list')({ node: folded('backup-list', { kind: 'success', text: TABLE }) })
+assert.equal(okTree.props['data-state'], 'ok')
+assert.equal(okTree.props['data-backup-command'], 'backup-list', 'the card names its command')
+const body = okTree.children.find(child => child !== null && child.type === 'pre')
+assert.ok(body !== undefined, 'a <pre> body is present on the first render (nothing to click)')
+assert.equal(body.props.className, 'dbk-cmd-body')
+assert.equal(body.children[0], TABLE, 'the whole multi-line outcome is rendered, unclipped')
+const okText = []
+walk(okTree, okText)
+assert.ok(okText.includes('/backup-list'), 'the command line heads the row')
+assert.ok(okText.includes(TABLE), 'no collapsed summary stands in for the table')
+
+// A rejection message (the /backup-restore decline path) renders the same way.
+const rejectTree = cardFor('backup-restore')({
+  node: folded('backup-restore', {
+    kind: 'success',
+    text: 'Restore rejected — you chose "no". Nothing was changed.',
+  }),
+})
+assert.equal(rejectTree.props['data-state'], 'ok', 'a rejection is a normal outcome, not an error')
+assert.ok(rejectTree.children.some(child => child !== null && child.type === 'pre'),
+  'the rejection message is visible without expanding')
+
+// Unsettled and failed outcomes keep their state, and never render a body.
+const runningTree = cardFor('backup')({ node: folded('backup', null) })
+assert.equal(runningTree.props['data-state'], 'running')
+assert.equal(runningTree.children.some(child => child !== null && child.type === 'pre'), false,
+  'no body before the command settles')
+const errorTree = cardFor('backup')({ node: folded('backup', { kind: 'error', text: 'Boom' }) })
+assert.equal(errorTree.props['data-state'], 'error')
+assert.equal(errorTree.children.find(child => child !== null && child.type === 'pre').children[0], 'Boom')
 
 console.log('ALL CLIENT TESTS PASSED')

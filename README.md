@@ -24,8 +24,17 @@ The plugin therefore ships a small web client face (`src/client.js`). For
 `/backup`, `/backup-list` and `/backup-restore` it projects the typed command
 line as a right-aligned input bubble anchored just before the durable result
 row. That extra node activates the chat view, so the result card renders
-immediately in a fresh session. The generic command lifecycle and its result
-row are unchanged.
+immediately in a fresh session. The generic command lifecycle is unchanged.
+
+### Reading the result
+
+The shipped command row folds its outcome into a single `nowrap`, ellipsised
+line and only reveals the full text after a click on the disclosure chevron —
+which hides a `/backup-list` table behind an interaction. The client face
+therefore also replaces that card for the three commands
+(`conversation.chat.commandview`, keyed by command name): the command line and
+a state dot are followed by the whole outcome text, rendered directly with no
+click needed. Very long output stays bounded by an internal scroll area.
 
 ### Restore modes
 
@@ -34,9 +43,16 @@ The confirm question offers the original tool's three answers:
 - `yes` — extract over the current files; files not in the backup are kept.
 - `clean` — empty the DSH home first, then extract (exact restore of the backup).
   Refused when the target resolves to `/` or the user's home directory.
-- `no` — cancel the restore.
+- `no` — reject the restore.
 
 After a restore you may need to restart any running `dsh` processes.
+
+Declining (`no`) and dismissing the dialog both settle as a normal outcome with
+an explicit message — `Restore rejected — you chose "no". Nothing was changed.`
+or `Restore rejected — you dismissed the dialog. Nothing was changed.` — rather
+than as a failure. This matters: a thrown handler settles the row as an error
+*and* re-raises to the caller, so the command request itself fails and no
+message reaches the transcript.
 
 ## Install
 
@@ -65,7 +81,8 @@ services plus `tar` on the PATH; the browser half uses the client-provided
 - `src/commands.ts` — the three command handlers and their output text.
 - `src/backup-core.ts` — timestamped tar.gz creation, listing and guarded
   restore (asynchronous, abort-aware).
-- `src/client.js` — browser half: the command-input Conversation Definition
-  and its keyed Chat Node renderer (served unbundled).
+- `src/client.js` — browser half: the command-input Conversation Definition,
+  its keyed Chat Node renderer, and the always-expanded command-result card
+  (served unbundled).
 - `tests/core.test.mjs` — host round-trip and registration tests.
 - `tests/client.test.mjs` — browser projection tests (node, no React).
